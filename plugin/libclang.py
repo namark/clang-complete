@@ -17,7 +17,7 @@ def canFindBuiltinHeaders(index, args = []):
   currentFile = ("test.c", '#include "stddef.h"')
   try:
     tu = index.parse("test.c", args, [currentFile], flags)
-  except TranslationUnitLoadError, e:
+  except TranslationUnitLoadError as e:
     return 0
   return len(tu.diagnostics) == 0
 
@@ -68,7 +68,7 @@ def initClangComplete(clang_complete_flags, clang_compilation_database, \
 
   try:
     index = Index.create()
-  except Exception, e:
+  except Exception as e:
     if library_path:
       suggestion = "Are you sure '%s' contains libclang?" % library_path
     else:
@@ -79,9 +79,9 @@ def initClangComplete(clang_complete_flags, clang_compilation_database, \
     else:
       exception_msg = ''
 
-    print '''Loading libclang failed, completion won't be available. %s
+    print('''Loading libclang failed, completion won't be available. %s
     %s
-    ''' % (suggestion, exception_msg)
+    ''' % (suggestion, exception_msg))
     return 0
 
   global builtinHeaderPath
@@ -90,9 +90,9 @@ def initClangComplete(clang_complete_flags, clang_compilation_database, \
     builtinHeaderPath = getBuiltinHeaderPath(library_path)
 
     if not builtinHeaderPath:
-      print "WARNING: libclang can not find the builtin includes."
-      print "         This will cause slow code completion."
-      print "         Please report the problem."
+      print("WARNING: libclang can not find the builtin includes.")
+      print("         This will cause slow code completion.")
+      print("         Please report the problem.")
 
   global translationUnits
   translationUnits = dict()
@@ -121,18 +121,18 @@ class CodeCompleteTimer:
       return
 
     content = vim.current.line
-    print " "
-    print "libclang code completion"
-    print "========================"
-    print "Command: clang %s -fsyntax-only " % " ".join(params['args']),
-    print "-Xclang -code-completion-at=%s:%d:%d %s" % (file, line, column, file)
-    print "cwd: %s" % params['cwd']
-    print "File: %s" % file
-    print "Line: %d, Column: %d" % (line, column)
-    print " "
-    print "%s" % content
+    print(" ")
+    print("libclang code completion")
+    print("========================")
+    print("Command: clang %s -fsyntax-only " % " ".join(params['args']), end=' ')
+    print("-Xclang -code-completion-at=%s:%d:%d %s" % (file, line, column, file))
+    print("cwd: %s" % params['cwd'])
+    print("File: %s" % file)
+    print("Line: %d, Column: %d" % (line, column))
+    print(" ")
+    print("%s" % content)
 
-    print " "
+    print(" ")
 
     current = time.time()
     self._start = current
@@ -157,13 +157,13 @@ class CodeCompleteTimer:
     for event in self._events:
       name, since_last = event
       percent = 1 / overall * since_last * 100
-      print "libclang code completion - %25s: %.3fs (%5.1f%%)" % \
-        (name, since_last, percent)
+      print("libclang code completion - %25s: %.3fs (%5.1f%%)" % \
+        (name, since_last, percent))
 
-    print " "
-    print "Overall: %.3f s" % overall
-    print "========================"
-    print " "
+    print(" ")
+    print("Overall: %.3f s" % overall)
+    print("========================")
+    print(" ")
 
 def getCurrentTranslationUnit(args, currentFile, fileName, timer,
                               update = False):
@@ -179,7 +179,7 @@ def getCurrentTranslationUnit(args, currentFile, fileName, timer,
   try:
     tu = index.parse(fileName, args, [currentFile], flags)
     timer.registerEvent("First parse")
-  except TranslationUnitLoadError, e:
+  except TranslationUnitLoadError as e:
     return None
 
   translationUnits[fileName] = tu
@@ -225,7 +225,7 @@ def getQuickFix(diagnostic):
     'type' : type})
 
 def getQuickFixList(tu):
-  return filter (None, map (getQuickFix, tu.diagnostics))
+  return [_f for _f in map (getQuickFix, tu.diagnostics) if _f]
 
 def highlightRange(range, hlGroup):
   pattern = '/\%' + str(range.start.line) + 'l' + '\%' \
@@ -251,7 +251,7 @@ def highlightDiagnostic(diagnostic):
     highlightRange(range, hlGroup)
 
 def highlightDiagnostics(tu):
-  map (highlightDiagnostic, tu.diagnostics)
+  list(map (highlightDiagnostic, tu.diagnostics))
 
 def highlightCurrentDiagnostics():
   if vim.current.buffer.name in translationUnits:
@@ -385,6 +385,10 @@ def formatResult(result):
       continue
 
     chunk_spelling = chunk.spelling
+    try:
+      chunk_spelling = chunk_spelling.decode('utf-8')
+    except AttributeError:
+      pass
 
     if chunk.isKindTypedText():
       abbr = chunk_spelling
@@ -405,7 +409,7 @@ def formatResult(result):
   menu = info
 
   if returnValue:
-    menu = returnValue.spelling + " " + menu
+    menu = returnValue.spelling.decode('utf-8') + " " + menu
 
   completion['word'] = snippetsAddSnippet(info, word, abbr)
   completion['abbr'] = abbr
@@ -484,8 +488,8 @@ def getCurrentCompletions(base):
 
   cr = t.result
   if cr is None:
-    print "Cannot parse this source file. The following arguments " \
-        + "are used for clang: " + " ".join(params['args'])
+    print("Cannot parse this source file. The following arguments " \
+        + "are used for clang: " + " ".join(params['args']))
     return (str([]), timer)
 
   results = cr.results
@@ -493,20 +497,22 @@ def getCurrentCompletions(base):
   timer.registerEvent("Count # Results (%s)" % str(len(results)))
 
   if base != "":
-    results = filter(lambda x: getAbbr(x.string).startswith(base), results)
+    results = [x for x in results if getAbbr(x.string).startswith(base.encode('utf-8'))]
 
   timer.registerEvent("Filter")
 
   if sorting == 'priority':
-    getPriority = lambda x: x.string.priority
-    results = sorted(results, None, getPriority)
+    def getPriority(x):
+      return x.string.priority
+    results = sorted(results, key=getPriority)
   if sorting == 'alpha':
-    getAbbrevation = lambda x: getAbbr(x.string).lower()
-    results = sorted(results, None, getAbbrevation)
+    def getAbbrevation(x):
+      return getAbbr(x.string).lower()
+    results = sorted(results, key=getAbbrevation)
 
   timer.registerEvent("Sort")
 
-  result = map(formatResult, results)
+  result = list(map(formatResult, results))
 
   timer.registerEvent("Format")
   return (str(result), timer)
@@ -547,7 +553,7 @@ def gotoDeclaration(preview=True):
                                    vim.current.buffer.name, timer,
                                    update = True)
     if tu is None:
-      print "Couldn't get the TranslationUnit"
+      print("Couldn't get the TranslationUnit")
       return
 
     f = File.from_name(tu, vim.current.buffer.name)
