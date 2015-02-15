@@ -52,7 +52,7 @@ def getBuiltinHeaderPath(library_path):
 
   return None
 
-def initClangComplete(clang_complete_flags, clang_compilation_database, \
+def initClangComplete(clang_complete_flags, clang_compilation_database,
                       library_path):
   global index
 
@@ -157,7 +157,7 @@ class CodeCompleteTimer:
     for event in self._events:
       name, since_last = event
       percent = 1 / overall * since_last * 100
-      print("libclang code completion - %25s: %.3fs (%5.1f%%)" % \
+      print("libclang code completion - %25s: %.3fs (%5.1f%%)" %
         (name, since_last, percent))
 
     print(" ")
@@ -488,7 +488,7 @@ def getCurrentCompletions(base):
 
   cr = t.result
   if cr is None:
-    print("Cannot parse this source file. The following arguments " \
+    print("Cannot parse this source file. The following arguments "
         + "are used for clang: " + " ".join(params['args']))
     return (str([]), timer)
 
