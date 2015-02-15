@@ -288,7 +288,7 @@ def getCompilationDBParams(fileName):
       skip_next = 1 # Skip compiler invocation
       for arg in cmds[0].arguments:
         if skip_next:
-          skip_next = 0;
+          skip_next = 0
           continue
         if arg == '-c':
           continue
@@ -296,7 +296,7 @@ def getCompilationDBParams(fileName):
            os.path.realpath(os.path.join(cwd, arg)) == fileName:
           continue
         if arg == '-o':
-          skip_next = 1;
+          skip_next = 1
           continue
         if arg.startswith('-I'):
           includePath = arg[2:]
@@ -308,7 +308,7 @@ def getCompilationDBParams(fileName):
       getCompilationDBParams.last_query = { 'args': args, 'cwd': cwd }
 
   # Do not directly return last_query, but make sure we return a deep copy.
-  # Otherwise users of that result may accidently change it and store invalid
+  # Otherwise users of that result may accidentally change it and store invalid
   # values in our cache.
   query = getCompilationDBParams.last_query
   return { 'args': list(query['args']), 'cwd': query['cwd']}
