@@ -17,7 +17,7 @@ def canFindBuiltinHeaders(index, args = []):
   currentFile = ("test.c", '#include "stddef.h"')
   try:
     tu = index.parse("test.c", args, [currentFile], flags)
-  except TranslationUnitLoadError as e:
+  except TranslationUnitLoadError:
     return 0
   return len(tu.diagnostics) == 0
 
@@ -182,7 +182,7 @@ def getCurrentTranslationUnit(args, currentFile, fileName, timer,
   try:
     tu = index.parse(fileName, args, [currentFile], flags)
     timer.registerEvent("First parse")
-  except TranslationUnitLoadError as e:
+  except TranslationUnitLoadError:
     return None
 
   translationUnits[fileName] = tu
